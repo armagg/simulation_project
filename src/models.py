@@ -1,9 +1,10 @@
+from typing import List
 from collections import deque
 from src.event_handler import CostumerServed, CostumerExhausted
 from src.variables import *
 
 class Costumer:
-    def __init__(self, id, exhusting_rate, arrival_time, priority=None) -> None:
+    def __init__(self, id, exhusting_rate, arrival_time, priority=None):
         self.id = id
         self.arrival_time = arrival_time
         self.exhust_time = get_exponential_variable(exhusting_rate)
@@ -119,7 +120,7 @@ class Worker:
 class Shop:
     def __init__(self, id, mius) -> None:
         self.pq = PriorityQueue()
-        self.workers = []
+        self.workers: list[Worker] = []
         for miu in mius:
             self.workers.append(Worker(miu))
         self.total_workers = len(mius)
@@ -151,12 +152,27 @@ class Shop:
         self.free_worker +=1
         for worker in self.workers:
             if worker.id == worker_id:
-                worker.busy = False
+                worker.free()
                 break
 
-    def add_to_queue(self, costomers: list):
-        for costumer in costomers:
-            self.pq.add_to_queue(costumer)
+    def add_to_queue(self, costumer: Costumer):
+        self.pq.add_to_queue(costumer)
+
+class SharifPlus:
+    def __init__(self, workers_parameters) -> None:
+        self.shops: List[Shop] = []
+        for i, workers in enumerate(workers_parameters):
+                self.shops.append(Shop(i, workers))
+        self.number_of_shops = len(workers_parameters)
+    
+    def add_to_queue(self, costumers):
+        for costumer in costumers:
+            tmp = random.randint(0, self.number_of_shops - 1)
+            self.shops[tmp].add_to_queue(costumer)
+    
+    def serve(self, time):
+        for shop in self.shops:
+            shop.serve(time)
 
 
 if __name__ == '__main__':
