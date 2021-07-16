@@ -1,23 +1,21 @@
 from queue import PriorityQueue
-from enum import Enum
+
 from dataclasses import dataclass
 q = PriorityQueue()
 
-
-# class EventType(Enum):
-#     COSTUMER_EXHAUST = 'costomer_exhaust'
 @dataclass
-class CostumerServed:
+class Event:
     end_time: int
-    costumer_id: int  
+    costumer_id: int
+
+@dataclass
+class CostumerServed(Event):
     store_id: int
     worker_id: int
 
 
 @dataclass
-class CostumerExhausted:
-    end_time: int
-    costumer_id: int  
+class CostumerExhausted(Event):  
     store_id: int
     worker_id: int
     
