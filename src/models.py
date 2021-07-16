@@ -1,10 +1,9 @@
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from collections import deque
+from src.event_handler import CostumerServed, CostumerExhausted
 from src.variables import *
+
 class Costumer:
-    def __init__(self, id, exhusting_rate, arrival_time, priority = None) -> None:
+    def __init__(self, id, exhusting_rate, arrival_time, priority=None) -> None:
         self.id = id
         self.arrival_time = arrival_time
         self.exhust_time = get_exponential_variable(exhusting_rate)
@@ -13,42 +12,43 @@ class Costumer:
             self.priority = priority
         else:
             self.priority = generate_costumer_priority()
-    
+
     def __repr__(self) -> str:
         return f'costomer_id: {self.id}'
-    
+
     def __eq__(self, o: object) -> bool:
         if self.id == o.id:
             return True
         else:
             return False
-    
 
-class CostomerGenerator():
+
+class CostumerGenerator():
     def __init__(self, landa, exhausting_rate):
         self.landa = landa
         self.id = 0
         self.exhausting_rate = exhausting_rate
-    
-    def get_costomer(self, time): 
+
+    def get_costomer(self, time):
         costumers = []
         for _ in range(get_poisson_variable(self.landa)):
             costumers.append(Costumer(self.id, self.exhausting_rate, time))
             self.id += 1
         return costumers
-    
-    
+
+
 class PriorityQueue:
-    def __init__(self, number_of_priorities = 5) -> None:
+    def __init__(self, number_of_priorities=5) -> None:
+        self.number_of_priorities = number_of_priorities
         self.queues = [deque() for _ in range(number_of_priorities)]
 
     def add_to_queue(self, person: Costumer):
         self.queues[person.priority].append(person)
-    
+
     def get_all_objects():
         pass
 
-    def remove(self, id: int= None, person: Costumer= None):
+    def remove(self, id: int = None, person: Costumer = None):
         if not id and not person:
             raise TypeError('you should provide at least one the id or\
                  person')
@@ -59,52 +59,112 @@ class PriorityQueue:
                 for element in list(queue):
                     if element.id == id:
                         queue.remove(element)
-    
-    def pop(self):
+
+    def pop(self, n=1):
+        persons = []
         for i in range(len(self.queues) - 1, -1, -1):
-            if len(self.queues[i]) > 0 :
-                return self.queues[i].popleft()
-        raise ValueError
-        
-    
-    
+            if len(self.queues[i]) > 0:
+                persons.append(self.queues[i].popleft())
+            if len(persons) == n:
+                break
+        return persons
+
     def get_number_in_queue(self, priority):
         return len(self.queues[priority])
 
-class Server:
-    '''
-    An abstract class for serving costumers with priority queues 
-    
-    '''
-
-    def __init__(self) -> None:
-        pass
+    def get_total_numer(self):
+        total = 0
+        for i in range(self.number_of_priorities):
+            total += self.get_number_in_queue(i)
+        return total
 
 
 class Reception():
-    def __init__(self) -> None:
-        pass
+    def __init__(self, miu: float) -> None:
+        self.pq = PriorityQueue()
+        self.miu = miu
 
-    def serve():
-        pass
+    def serve(self):
+        this_time_serve = get_poisson_variable(self.miu)
+        number_in_queue = self.pq.get_total_numer()
+        if this_time_serve > number_in_queue:
+            this_time_serve = number_in_queue
+        costomers = []
+        for _ in range(this_time_serve):
+            costomers.append(self.pq.pop()[0])
+        return costomers
 
-    def add_to_queue():
-        pass
+    def add_to_queue(self, costomers: list):
+        for costumer in costomers:
+            self.pq.add_to_queue(costumer)
 
 
-class Store:
-    def __init__(self) -> None:
-        pass
-    
-    def serve():
-        pass
+class Worker:
+    def __init__(self, id, miu) -> None:
+        self.busy = False
+        self.miu = miu
+        self.costumer_id = None
+        self.id = id
+
+    def cook(self, costumer_id):
+        self.busy = True
+        self.costumer_id = costumer_id
+        return get_poisson_variable(self.miu)
+
+    def free(self):
+        self.busy = False
+        self.costumer_id = None
 
 
+class Shop:
+    def __init__(self, id, mius) -> None:
+        self.pq = PriorityQueue()
+        self.workers = []
+        for miu in mius:
+            self.workers.append(Worker(miu))
+        self.total_workers = len(mius)
+        self.free_workers = self.total_workers
+        self.id = id
 
-class Chef:
-    def __init__(self) -> None:
-        pass
+    # todo: lower the bar with one time sort
+    def get_sorted_worker(self):
+        sorted_workers = sorted(
+            self.workers, key=lambda x: x.miu, reverse=True)
+        return sorted_workers
+
+    def serve(self, time):
+        events = []
+        if self.free_workers > 0 and self.pq.get_total_numer() > 0:
+            costumers = self.pq.pop(n=self.free_workers)
+            workers: list[Worker] = [
+                w for w in self.get_sorted_worker() if w.busy == False]
+            for i, costumer in enumerate(costumers):
+                events.append(CostumerServed(
+                    time + workers[i].cook(costumer_id=costumer.id),
+                    costumer.id,
+                    self.id,
+                    workers[i].id))
+                self.free_workers -= 1
+        return events
+
+    def free_worker(self, worker_id):
+        self.free_worker +=1
+        for worker in self.workers:
+            if worker.id == worker_id:
+                worker.busy = False
+                break
+
+    def add_to_queue(self, costomers: list):
+        for costumer in costomers:
+            self.pq.add_to_queue(costumer)
 
 
 if __name__ == '__main__':
- 
+    # g = CostomerGenerator(10, 100)
+    # r = Reception(10)
+    # l = g.get_costomer(1)
+    # r.add_to_queue(l)
+    # print(r.pq.queues)
+    # e()
+    # print(r.pq.queues)
+    pass
