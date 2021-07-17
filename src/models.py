@@ -39,10 +39,17 @@ class CostumerGenerator():
 
     def get_costomer(self, time):
         costumers = []
+        exhaust_events = []
         for _ in range(get_poisson_variable(self.landa)):
-            costumers.append(Costumer(self.id, self.exhausting_rate, time))
+            costumer = Costumer(self.id, self.exhausting_rate, time)
+            costumers.append(costumer)
             self.id += 1
-        return costumers
+            exhaust_events.append(CostumerExhausted(
+                costumer.exhust_time,
+                costumer.id,
+                costumer.priority)
+            )
+        return costumers, exhaust_events
 
 
 class PriorityQueue:
@@ -62,12 +69,14 @@ class PriorityQueue:
                  person')
         if person:
             self.queues[person.priority].remove(person)
+            return True
         else:
             for queue in self.queues:
                 for element in list(queue):
                     if element.id == id:
                         queue.remove(element)
-
+                        return True
+        return False
     def pop(self, n=1):
         persons = []
         for i in range(len(self.queues) - 1, -1, -1):
@@ -187,7 +196,12 @@ class SharifPlus:
             costumers.extend(tmp_costumers)
         return events, costumers
 
-
+    def remove(self, costumer_id, priority):
+        for shop in self.shops:
+            for costumer in list(shop.pq.queues[priority]):
+                if costumer.id == costumer_id:
+                    shop.pq.queues[priority].remove(costumer)
+                    return shop.id
 
 if __name__ == '__main__':
     # g = CostomerGenerator(10, 100)
