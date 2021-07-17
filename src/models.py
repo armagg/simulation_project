@@ -2,6 +2,13 @@ from typing import List
 from collections import deque
 from src.event_handler import CostumerServed, CostumerExhausted
 from src.variables import *
+from enum import Enum
+
+
+class Place(Enum):
+    RECEPTION = 1
+    QUEUE = 2
+    WAIT = 3
 
 class Costumer:
     def __init__(self, id, exhusting_rate, arrival_time, priority=None):
@@ -121,8 +128,8 @@ class Shop:
     def __init__(self, id, mius) -> None:
         self.pq = PriorityQueue()
         self.workers: list[Worker] = []
-        for miu in mius:
-            self.workers.append(Worker(miu))
+        for i, miu in enumerate(mius):
+            self.workers.append(Worker(i, miu))
         self.total_workers = len(mius)
         self.free_workers = self.total_workers
         self.id = id
@@ -171,8 +178,10 @@ class SharifPlus:
             self.shops[tmp].add_to_queue(costumer)
     
     def serve(self, time):
+        events = []
         for shop in self.shops:
-            shop.serve(time)
+            events.extend(shop.serve(time))
+        return events
 
 
 if __name__ == '__main__':
