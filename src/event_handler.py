@@ -10,12 +10,13 @@ class Event:
 
 @dataclass
 class CostumerServed(Event):
-    store_id: int
+    shop_id: int
     worker_id: int
 
 
 @dataclass
 class CostumerExhausted(Event):  
-    store_id: int
-    worker_id: int
+    priority: int
+    shop_id: int = None
+    worker_id: int = None
     
