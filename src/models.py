@@ -142,8 +142,9 @@ class Shop:
 
     def serve(self, time):
         events = []
+        costumers = []
         if self.free_workers > 0 and self.pq.get_total_numer() > 0:
-            costumers = self.pq.pop(n=self.free_workers)
+            costumers = self.pq.pop(n = self.free_workers)
             workers: list[Worker] = [
                 w for w in self.get_sorted_worker() if w.busy == False]
             for i, costumer in enumerate(costumers):
@@ -153,10 +154,10 @@ class Shop:
                     self.id,
                     workers[i].id))
                 self.free_workers -= 1
-        return events
+        return events, costumers
 
     def free_worker(self, worker_id):
-        self.free_worker +=1
+        self.free_workers +=1
         for worker in self.workers:
             if worker.id == worker_id:
                 worker.free()
@@ -179,9 +180,13 @@ class SharifPlus:
     
     def serve(self, time):
         events = []
+        costumers = []
         for shop in self.shops:
-            events.extend(shop.serve(time))
-        return events
+            tmp_events, tmp_costumers = shop.serve(time)
+            events.extend(tmp_events)
+            costumers.extend(tmp_costumers)
+        return events, costumers
+
 
 
 if __name__ == '__main__':
