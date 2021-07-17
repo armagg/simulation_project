@@ -27,3 +27,7 @@ def generate_costumer_priority():
 
 def init_data():
     pass
+
+2, 10, 10, 100                               
+1, 1, 3, 15, 12, 4, 2, 5, 4, 1
+1, 1, 3, 15, 12, 4, 2, 5, 4, 1

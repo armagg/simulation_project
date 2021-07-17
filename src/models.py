@@ -9,6 +9,7 @@ class Place(Enum):
     RECEPTION = 1
     QUEUE = 2
     WAIT = 3
+    EXIT = 4
 
 class Costumer:
     def __init__(self, id, exhusting_rate, arrival_time, priority=None):
